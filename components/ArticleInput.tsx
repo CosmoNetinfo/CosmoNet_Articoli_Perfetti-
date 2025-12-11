@@ -1,5 +1,5 @@
 import React from 'react';
-import { SparklesIcon, ArchiveBoxIcon } from './IconComponents';
+import { SparklesIcon, ArchiveBoxIcon, CheckCircleIcon } from './IconComponents';
 
 interface ArticleInputProps {
     value: string;
@@ -8,12 +8,22 @@ interface ArticleInputProps {
     isLoading: boolean;
     savedCount: number;
     onLoadClick: () => void;
+    lastAutoSave: Date | null;
 }
 
-export const ArticleInput: React.FC<ArticleInputProps> = ({ value, onChange, onOptimize, isLoading, savedCount, onLoadClick }) => {
+export const ArticleInput: React.FC<ArticleInputProps> = ({ value, onChange, onOptimize, isLoading, savedCount, onLoadClick, lastAutoSave }) => {
     return (
-        <div className="flex flex-col gap-4 bg-slate-800/50 p-6 rounded-lg shadow-lg border border-slate-700">
-            <h2 className="text-2xl font-semibold text-slate-100">Il Tuo Articolo</h2>
+        <div className="flex flex-col gap-4 bg-slate-800/50 p-6 rounded-lg shadow-lg border border-slate-700 relative">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-semibold text-slate-100">Il Tuo Articolo</h2>
+                {lastAutoSave && (
+                    <div className="flex items-center gap-1.5 text-xs text-green-400/80 bg-green-900/20 px-2 py-1 rounded-full border border-green-900/30">
+                        <CheckCircleIcon className="w-3 h-3" />
+                        <span>Salvataggio auto: {lastAutoSave.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                )}
+            </div>
+            
             <textarea
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -46,6 +56,9 @@ export const ArticleInput: React.FC<ArticleInputProps> = ({ value, onChange, onO
                 </button>
 
             </div>
+            <p className="text-xs text-slate-500 text-center italic">
+                Le bozze vengono salvate automaticamente ogni 2 minuti.
+            </p>
         </div>
     );
 };

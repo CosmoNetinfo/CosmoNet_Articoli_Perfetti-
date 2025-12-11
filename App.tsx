@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArticleInput } from './components/ArticleInput';
 import { SeoOutput } from './components/SeoOutput';
 import { optimizeArticleForSeo } from './services/geminiService';
@@ -13,20 +13,50 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [savedArticles, setSavedArticles] = useState<SavedSeoResult[]>([]);
     const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+    const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
 
     const STORAGE_KEY = 'seo-optimizer-saved-articles';
+    const AUTOSAVE_KEY = 'cosmonet-autosave-draft';
+    
+    // Ref per accedere al valore corrente di articleText all'interno del setInterval senza re-triggerare l'effetto
+    const articleTextRef = useRef(articleText);
 
+    // Manteniamo il ref sincronizzato
+    useEffect(() => {
+        articleTextRef.current = articleText;
+    }, [articleText]);
+
+    // Caricamento dati iniziali (Articoli salvati + Bozza automatica)
     useEffect(() => {
         try {
             const storedArticles = localStorage.getItem(STORAGE_KEY);
             if (storedArticles) {
                 setSavedArticles(JSON.parse(storedArticles));
             }
+            
+            // Ripristino bozza automatica
+            const autoSavedDraft = localStorage.getItem(AUTOSAVE_KEY);
+            if (autoSavedDraft) {
+                setArticleText(autoSavedDraft);
+                setLastAutoSave(new Date()); // Indichiamo che c'è un contenuto recuperato
+            }
         } catch (error) {
-            console.error("Failed to load articles from localStorage", error);
-            // In case of parsing error, clear the corrupted data
+            console.error("Failed to load data from localStorage", error);
             localStorage.removeItem(STORAGE_KEY);
         }
+    }, []);
+
+    // Timer per Auto-Save ogni 2 minuti (120000 ms)
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            const currentText = articleTextRef.current;
+            if (currentText && currentText.trim().length > 0) {
+                localStorage.setItem(AUTOSAVE_KEY, currentText);
+                setLastAutoSave(new Date());
+            }
+        }, 120000);
+
+        return () => clearInterval(intervalId);
     }, []);
 
     const handleOptimize = useCallback(async () => {
@@ -54,7 +84,7 @@ const App: React.FC = () => {
 
         const newSavedArticle: SavedSeoResult = {
             ...seoResult,
-            htmlContent: finalHtml || seoResult.htmlContent, // Use modified HTML if provided
+            htmlContent: finalHtml || seoResult.htmlContent,
             id: Date.now().toString(),
             originalArticleText: articleText,
         };
@@ -103,6 +133,7 @@ const App: React.FC = () => {
                         isLoading={isLoading}
                         onLoadClick={() => setIsLoadModalOpen(true)}
                         savedCount={savedArticles.length}
+                        lastAutoSave={lastAutoSave}
                     />
                     <SeoOutput
                         result={seoResult}

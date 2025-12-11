@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { SeoResult, SeoChecklistItem } from '../types';
+import { SeoResult, SeoChecklistItem, ReadabilityItem } from '../types';
 import { Loader } from './Loader';
-import { ClipboardIcon, CheckIcon, EyeIcon, CodeBracketIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, BookmarkIcon, PhotoIcon, SparklesIcon } from './IconComponents';
+import { ClipboardIcon, CheckIcon, EyeIcon, CodeBracketIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, BookmarkIcon, PhotoIcon, SparklesIcon, DocumentMagnifyingGlassIcon } from './IconComponents';
 import { generateImage } from '../services/geminiService';
 
 interface SeoOutputProps {
@@ -79,6 +79,19 @@ const ChecklistStatusIcon: React.FC<{ status: 'pass' | 'fail' | 'manual_action' 
     }
 };
 
+const ReadabilityStatusIcon: React.FC<{ status: 'good' | 'ok' | 'needs_improvement' }> = ({ status }) => {
+    switch (status) {
+        case 'good':
+            return <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0 mt-1.5" />;
+        case 'ok':
+            return <div className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0 mt-1.5" />;
+        case 'needs_improvement':
+            return <div className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 mt-1.5" />;
+        default:
+            return <div className="w-3 h-3 rounded-full bg-slate-500 flex-shrink-0 mt-1.5" />;
+    }
+};
+
 const KeywordDensityIndicator: React.FC<{ count: number; limit: number }> = ({ count, limit }) => {
     const percentage = Math.min((count / limit) * 100, 100);
     let barColor = 'bg-green-500';
@@ -128,6 +141,39 @@ const SeoChecklistReport: React.FC<{ checklist: SeoChecklistItem[] }> = ({ check
                         </div>
                     );
                 })}
+            </div>
+        </div>
+    );
+};
+
+const ReadabilityReport: React.FC<{ readability: ReadabilityItem[] }> = ({ readability }) => {
+    if (!readability || readability.length === 0) return null;
+
+    return (
+        <div>
+            <div className="flex items-center gap-2 mb-3">
+                <DocumentMagnifyingGlassIcon className="w-6 h-6 text-emerald-400" />
+                <h3 className="text-xl font-semibold text-emerald-400">Controllo Leggibilità</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {readability.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3 bg-slate-900 p-3 rounded-lg border border-slate-700">
+                        <ReadabilityStatusIcon status={item.status} />
+                        <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                                <p className="font-semibold text-slate-200">{item.criteria}</p>
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${
+                                    item.status === 'good' ? 'bg-green-900/50 text-green-300' :
+                                    item.status === 'ok' ? 'bg-yellow-900/50 text-yellow-300' :
+                                    'bg-red-900/50 text-red-300'
+                                }`}>
+                                    {item.score}
+                                </span>
+                            </div>
+                            <p className="text-sm text-slate-400 mt-1 leading-snug">{item.message}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -376,7 +422,10 @@ export const SeoOutput: React.FC<SeoOutputProps> = ({ result, isLoading, error, 
                     </div>
                 </div>
 
-                <SeoChecklistReport checklist={result.seoChecklist} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <SeoChecklistReport checklist={result.seoChecklist} />
+                    <ReadabilityReport readability={result.readability} />
+                </div>
 
                 <ImageGenerator keyPhrase={result.keyPhrase} onImageGenerated={setLastGeneratedImageUrl} />
 

@@ -50,72 +50,54 @@ const responseSchema = {
                 },
                 required: ["item", "status", "details"]
             }
+        },
+        readability: {
+            type: Type.ARRAY,
+            description: "Analisi della leggibilità basata sui 6 criteri richiesti.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    criteria: { type: Type.STRING, description: "Il criterio analizzato (es. Forme passive)." },
+                    status: { type: Type.STRING, description: "Lo stato: 'good', 'ok', o 'needs_improvement'." },
+                    score: { type: Type.STRING, description: "Il valore numerico o qualitativo (es. '15%', 'Nessuna')." },
+                    message: { type: Type.STRING, description: "Feedback specifico o suggerimento per migliorare." }
+                },
+                required: ["criteria", "status", "score", "message"]
+            }
         }
     },
-    required: ["keyPhrase", "title", "description", "slug", "htmlContent", "tags", "categories", "seoChecklist", "socialMediaPost"],
+    required: ["keyPhrase", "title", "description", "slug", "htmlContent", "tags", "categories", "seoChecklist", "socialMediaPost", "readability"],
 };
 
 
 export const optimizeArticleForSeo = async (articleText: string): Promise<SeoResult> => {
     try {
-        const prompt = `Sei un esperto stratega di contenuti SEO e sviluppatore front-end che segue rigorosamente la "Checklist SEO Cosmonet.info". Il tuo compito è analizzare l'articolo dell'utente, ottimizzarlo secondo ogni singolo punto della checklist e strutturarlo in un HTML pulito e semantico pronto per WordPress. La lingua per tutti i contenuti generati deve essere l'italiano.
+        const prompt = `Sei un esperto stratega di contenuti SEO e copywriter che segue rigorosamente la "Checklist SEO Cosmonet.info".
+Il tuo compito è analizzare l'articolo dell'utente, ottimizzarlo ed espanderlo, e infine restituire un HTML pulito insieme a un'analisi SEO e di Leggibilità dettagliata.
 
-⚠️ ⚠️ ⚠️ REGOLA FONDAMENTALE - ESPANSIONE CONTENUTO ⚠️ ⚠️ ⚠️
-Il tuo compito è TRASFORMARE il testo fornito in un ARTICOLO COMPLETO E PROFONDO di almeno 1000 parole.
+⚠️ OBIETTIVO CONTENUTO: TRASFORMA IL TESTO IN UN ARTICOLO DI ALMENO 1000 PAROLE.
+Approfondisci ogni concetto, aggiungi esempi, liste e dettagli.
 
-COSA DEVI FARE (ESPANSIONE):
-✅ SE il testo è breve -> ESPANDILO massicciamente approfondendo ogni concetto.
-✅ SE il testo è lungo -> Preservalo o miglioralo aggiungendo dettagli.
-✅ OBIETTIVO MINIMO: 1000 PAROLE.
-✅ Aggiungi ESEMPI pratici, Spiegazioni dettagliate, Liste puntate, Tabelle comparative.
-✅ Usa paragrafi brevi ma numerosi.
-✅ Scrivi in ottica "Semantic SEO": copri l'argomento in modo esaustivo per diventare la risorsa n.1 su Google.
+**Checklist SEO (Output nel campo seoChecklist):**
+- Frase chiave, Titolo SEO, Meta Description, Slug, Densità Keyword, Immagini (placeholder), Link Interni/Esterni, Lunghezza, Struttura H1-H3.
 
-COSA NON DEVI FARE:
-❌ NON essere sintetico.
-❌ NON riassumere.
-❌ NON tagliare concetti.
-❌ NON fermarti a superficiali descrizioni: vai a fondo.
+**Checklist LEGGIBILITÀ (Output nel campo readability):**
+Analizza il TESTO GENERATO secondo questi criteri precisi:
+1. **Parole di transizione**: Controlla la presenza di parole come "perché", "quindi", "tuttavia", "inoltre". (Target: >30% delle frasi).
+2. **Frasi consecutive**: Segnala se 3 o più frasi consecutive iniziano con la stessa parola.
+3. **Distribuzione sottotitoli**: Verifica che non ci siano sezioni di testo più lunghe di 300 parole senza un sottotitolo.
+4. **Forme passive**: Calcola la percentuale di frasi passive. (Target: <10%).
+5. **Lunghezza paragrafi**: Nessun paragrafo dovrebbe superare le 150 parole.
+6. **Lunghezza frasi**: Nessuna frase dovrebbe superare le 20-25 parole per favorire la lettura.
 
-**Checklist SEO Cosmonet.info (OBBLIGATORIA):**
-- Frase chiave: Unica, mai usata prima, lunghezza appropriata
-- Titolo SEO: Inizia con frase chiave, 50-60 caratteri
-- Introduzione: Inizia con frase chiave
-- Meta Description: Include frase chiave, max 155 caratteri
-- URL Slug: Contiene frase chiave, semplice
-- Densità: Naturale, ma presente
-- Immagini: MINIMO 3 segnaposto <!-- IMAGE_PLACEHOLDER: alt con keyword -->
-- LUNGHEZZA: Obiettivo 1000+ parole (o +30% dell'originale se già lungo)
-- Link interni: MINIMO 2 <!-- INSERIRE LINK INTERNO: testo -->
-- Link esterni: MINIMO 1 autorevole
-- Struttura: H1 potente, H2 per sezioni principali, H3 per dettagli
+**HTML Output Rules:**
+- Solo tag semantici body (h1, h2, h3, p, ul, ol, strong, em, table).
+- Inserisci placeholder immagini: <!-- IMAGE_PLACEHOLDER: descrizione alt -->
+- Inserisci placeholder link interni: <!-- INSERIRE LINK INTERNO: testo anchor -->
 
-**COMPITI:**
-1. Genera un articolo RICCO e DETTAGLIATO (Target 1000 parole)
-2. Preserva il tone of voice ma rendilo autorevole
-3. Espandi i punti elenco in paragrafi completi
-4. MINIMO 3 <!-- IMAGE_PLACEHOLDER: alt descrittivo -->
-5. MINIMO 2 <!-- INSERIRE LINK INTERNO: --> + 1 link esterno
-6. Genera: keyphrase, title, description, slug, tags
-7. Suggerisci 3-5 categorie
-8. Post social engaging con hashtag
-9. HTML pulito (solo body tags: h1-h3 p table ol ul)
-10. Analisi checklist con status
+**RISPONDI SOLO CON JSON VALIDO** secondo lo schema fornito.
 
-**RISPONDI SOLO CON JSON VALIDO:**
-{
-  "keyPhrase": "frase chiave primaria",
-  "title": "Titolo SEO 50-60 char",
-  "description": "Meta max 155 char",
-  "slug": "url-slug-ottimizzato",
-  "htmlContent": "HTML COMPLETO SEMANTICO",
-  "tags": "tag1, tag2, tag3",
-  "categories": "Cat1, Cat2, Cat3",
-  "socialMediaPost": "Post social #hashtag",
-  "seoChecklist": [{"item":"nome","status":"pass/fail","details":"spiegazione"}]
-}
-
-**Articolo da analizzare:**
+**Articolo Originale:**
 ---
 ${articleText}
 ---`;
