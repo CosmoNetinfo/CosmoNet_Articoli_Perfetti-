@@ -6,10 +6,15 @@ export interface SeoChecklistItem {
 }
 
 export interface ReadabilityItem {
-  criteria: string; // Es: "Parole di transizione", "Forme passive"
+  criteria: string; 
   status: 'good' | 'ok' | 'needs_improvement';
-  score: string; // Es: "30%", "2 trovate"
-  message: string; // Consiglio specifico
+  score: string; 
+  message: string; 
+}
+
+export interface GroundingSource {
+  title: string;
+  uri: string;
 }
 
 export interface SeoResult {
@@ -23,6 +28,7 @@ export interface SeoResult {
   tags: string;
   categories: string;
   socialMediaPost: string;
+  groundingSources?: GroundingSource[];
 }
 
 export interface SavedSeoResult extends SeoResult {

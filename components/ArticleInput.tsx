@@ -1,5 +1,5 @@
-import React from 'react';
-import { SparklesIcon, ArchiveBoxIcon, CheckCircleIcon } from './IconComponents';
+import React, { useRef } from 'react';
+import { SparklesIcon, ArchiveBoxIcon, CheckCircleIcon, CloudArrowDownIcon, CloudArrowUpIcon } from './IconComponents';
 
 interface ArticleInputProps {
     value: string;
@@ -9,12 +9,26 @@ interface ArticleInputProps {
     savedCount: number;
     onLoadClick: () => void;
     lastAutoSave: Date | null;
+    onExportDB: () => void;
+    onImportDB: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const ArticleInput: React.FC<ArticleInputProps> = ({ value, onChange, onOptimize, isLoading, savedCount, onLoadClick, lastAutoSave }) => {
+export const ArticleInput: React.FC<ArticleInputProps> = ({ 
+    value, 
+    onChange, 
+    onOptimize, 
+    isLoading, 
+    savedCount, 
+    onLoadClick, 
+    lastAutoSave,
+    onExportDB,
+    onImportDB
+}) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     return (
         <div className="flex flex-col gap-4 bg-slate-800/50 p-6 rounded-lg shadow-lg border border-slate-700 relative">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-2">
                 <h2 className="text-2xl font-semibold text-slate-100">Il Tuo Articolo</h2>
                 {lastAutoSave && (
                     <div className="flex items-center gap-1.5 text-xs text-green-400/80 bg-green-900/20 px-2 py-1 rounded-full border border-green-900/30">
@@ -22,6 +36,34 @@ export const ArticleInput: React.FC<ArticleInputProps> = ({ value, onChange, onO
                         <span>Salvataggio auto: {lastAutoSave.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                 )}
+            </div>
+
+            {/* Database controls */}
+            <div className="flex gap-2 justify-end">
+                <button 
+                    onClick={onExportDB}
+                    disabled={savedCount === 0}
+                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
+                    title="Esporta Database (JSON)"
+                >
+                    <CloudArrowDownIcon className="w-4 h-4" />
+                    Backup DB
+                </button>
+                <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-indigo-300 transition-colors"
+                    title="Importa Database (JSON)"
+                >
+                    <CloudArrowUpIcon className="w-4 h-4" />
+                    Ripristina DB
+                </button>
+                <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    onChange={onImportDB}
+                    accept=".json"
+                    className="hidden"
+                />
             </div>
             
             <textarea
